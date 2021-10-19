@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import math
 WS = pd.read_excel('D:\github\python_statistics\DATA\FIRM.xlsx')
 
+
 data = np.array(WS).transpose()
 
 adv = data[0, :].reshape(-1, 1)
