@@ -3,7 +3,7 @@ import math
 
 
 def r2_score_adj(r2, n, k):
-    return 1-((1-r2)*(n-1)/(n-k-1))
+    return 1-((1-r2)*(n-1)/(n-k))
 
 
 def sigma_bi_sq(sigma_sq, XX):
