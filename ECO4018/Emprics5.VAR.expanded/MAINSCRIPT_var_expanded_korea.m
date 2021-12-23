@@ -39,7 +39,7 @@ i_kr = X00_endo_temp(:,3);              % Korean nominal interest rate
 er_kr = log(X00_endo_temp(:,4));        % logged nominal exchange rate (won/dollar)
 
 %% Construct VAR data
-%EXO = [y_us i_us oil_price];            % exogenous variables
+EXO = [y_us i_us oil_price];            % exogenous variables
 %EXO = [y_us i_us];
 %EXO = [];
 
@@ -51,7 +51,7 @@ YY = X(nlags+1:end,:);                  % VAR regressand
 
 
 lin_trend=(1:1:TT)';
-EXO=[lin_trend lin_trend.^2];
+%EXO=[lin_trend lin_trend.^2];
 
 
 XX00 = zeros(TT,nvar*nlags);            % XX00: VAR regressor without the constant term
@@ -63,14 +63,15 @@ for i=1:nlags
 end
 
 %X_det = [ones(TT,1) EXO(nlags+1:end,:)];    % deterministic components of the VAR model
-X_det = [ones(TT,1) EXO];    % deterministic components of the VAR model
+X_det = [ones(TT,1) EXO(nlags+1:end,:)];    % deterministic components of the VAR model
 
 n_det = size(X_det,2);                  % number of the deterministic components
 
-
+% 81*16
 XX = [X_det XX00];                      % XX: VAR regressor
 
 %% VAR estimation using OLS
+%16*4
 beta = inv(XX'*XX)*XX'*YY;              % VAR coefficients using OLS estimation
 
 u = YY-XX*beta;                         % reduced-form residuals
@@ -79,9 +80,14 @@ sigma = u'*u/TT;                        % variance-covariance matrix
 
 %% Identification of structural shocks using Cholesky
 L = chol(sigma)';                       % chol gives upper triangular matrix
-
+%L =L*30
+isSigma=L*L';
+isIdempotent=L*sigma*L';
+invL=inv(L);
 %% Construct VAR coefficient matrix for impulse responses
+% n_det+1 : 외생변수 제외
 PI = beta(n_det+1:end,:)';
+% why 전치?
 if nlags > 1
     nsub = size(PI,2)-nvar;
     prePi = [eye(nsub) zeros(nsub,nvar)];
