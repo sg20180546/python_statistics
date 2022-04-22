@@ -1,5 +1,4 @@
 from tkinter import *
-from requests import options
 import scipy.optimize as opt
 import numpy as np
 import pandas as pd
@@ -16,8 +15,9 @@ for code in ['005930','036570','000660','035720','035420']:
 
 # 삼성전자, 엔씨소프트, SK하이닉스, 카카오, 네이버
 data.columns=['se','nc','skh','kk','nvr']
-
+# print(data)
 ret=data.pct_change().dropna()
+# print(ret)
 ret=ret.reset_index(drop=True)
 noa=len(ret.columns)
 weights=np.array([0.6])
@@ -27,11 +27,10 @@ weights=np.concatenate((weights,other),axis=0)
 
 
 
-
 port_rets=[]
 port_std=[]
-weights=np.random.random(noa)
-weights/=sum(weights)
+# weights=np.random.random(noa)
+# weights/=sum(weights)
 def statistics(weights,rf=0):
     weights=np.array(weights)
     pret=np.sum(ret.mean()*weights)*252-rf
@@ -49,6 +48,8 @@ def min_func_volatility(weights):
 
 
 def ret_std(weight, ret):
+    # print(ret.cov().shape)
+    # print(weight.shape)
     port_mean=np.sum(weight*ret.mean()*252)
     port_var=np.dot(weight.T,np.dot(ret.cov()*252,weight))
     port_std=np.sqrt(port_var)
@@ -64,18 +65,19 @@ for w in range(2500):
 sr=np.array(port_rets)/np.array(port_std)
 
 
-trets=np.linspace(0.0,0.25,50)
+trets=np.linspace(0.0,0.25,100)
 tvols=[]
 
 bnds=tuple((0,1)for x in weights)
+trets = np.linspace(0.4, 0.5, 100)
+tvols = []
 for tret in trets:
-    cons=({'type':'eq','fun':lambda x:statistics(x)[0]-tret},
-        {'type':'eq','fun':lambda x : np.sum(x)-1})
-    res=opt.minimize(min_func_port,noa*[1./noa,],method='SLSQP',
-        bounds=bnds,constraints=cons)
+    cons = ({'type': 'eq', 'fun': lambda x:  statistics(x)[0] - tret},
+            {'type': 'eq', 'fun': lambda x:  np.sum(x) - 1})
+    res = opt.minimize(min_func_port, noa * [1. / noa,], method='SLSQP' ,
+                   bounds=bnds, constraints=cons)
     tvols.append(res['fun'])
-
-tvols=np.array(tvols)
+tvols = np.array(tvols)
 
 cons=({'type':'eq','fun':lambda x : np.sum(x)-1})
 bnds=tuple((0,1) for x in range(noa))
@@ -89,13 +91,14 @@ var_list=[x*slope+rf for x in np.linspace(0.16,0.30,2500)]
 
 x=np.linspace(0.16,0.30,2500)
 y=var_list
-
+print(noa*[1./noa,])
 plt.style.use('seaborn')
 plt.figure(figsize=(12,8))
 plt.scatter(port_std,port_rets,c=sr,marker='.',cmap='RdGy')
 plt.plot(statistics(opts['x'])[1],statistics(opts['x'])[0],'r*',markersize=15.0,label='Portfolio with highest Sharpe Ratio')
 plt.plot(statistics(optv['x'])[1],statistics(optv['x'])[0],'y*',markersize=15.0,label='Minimum Variance portfolio')
 plt.plot(x,y,label='mean-variance frontier with riskfree asset')
+plt.plot(tvols, np.linspace(0.4, 0.5, 100))
 plt.legend()
 plt.grid(True)
 plt.colorbar(label='Sharpe Ratio')
